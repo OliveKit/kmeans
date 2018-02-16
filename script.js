@@ -21,14 +21,22 @@ document.addEventListener("keydown", function(event) {
     if(event.keyCode === 32) {
         iterateKmeans();
     }
+    if(event.keyCode === 82) {
+      cluster_centers = [];
+      init_figure();
+    }
 });
+
+function init_centers(){
+  let temp_points = points.slice();
+  temp_points = d3.shuffle(temp_points);
+
+  return temp_points.slice(0, nb_clusters);
+};
 
 function iterateKmeans() {
     if (cluster_centers.length === 0) {
-        let temp_points = points.slice();
-        temp_points = d3.shuffle(temp_points);
-
-        cluster_centers = temp_points.slice(0, nb_clusters);
+        cluster_centers = init_centers();
     } else {
         cluster_centers = updateCenters(cluster_points);
     }
@@ -52,11 +60,14 @@ function gaussianRand(theta=4) {
   return rand / theta;
 }
 
+function isInsideCanvas(point){
+  if (point.x < 0 || point.x > canvas_x){return false;};
+  if (point.y < 0 || point.y > canvas_y){return false;};
+  return true;
+}
 
 function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distribution){
   let new_points = [];
-  c0 = {x:150, y:150};
-  c1 = {x:350, y:150};
   clusters = [];
   for (let c =0; c < nb_c; ++c){
     clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
@@ -64,7 +75,10 @@ function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distributio
 
   for (let p = 0; p < nb_p/nb_c; ++p ){
     for (let c of clusters){
-      new_points.push({x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)})
+      let new_point = {x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)}
+      if(isInsideCanvas(new_point) == true){
+        new_points.push(new_point)
+      }
     }
   }
   return new_points;
@@ -91,7 +105,7 @@ function drawCircle(x, y, size, color=point_color) {
         .attr("fill", color)
         .attr("fill-opacity", 0.5)
         .style("stroke", "black")
-        .style("stroke-width", "2px");
+        .style("stroke-width", "1px");
 }
 
 function displayCenters(centers) {
@@ -108,6 +122,8 @@ function displayCenters(centers) {
 }
 
 function init_figure(){
+  svg.selectAll(".center-circle").remove();
+  svg.selectAll(".click-circle").remove();
   for (let p of points){
     drawCircle(p.x, p.y, point_size, point_color);
   }
@@ -150,29 +166,6 @@ function displayPoints(cpoints) {
 
 // let cluster_centers = [];
 
-function init_kmeans(){
-    let temp_points = points.slice();
-    temp_points = d3.shuffle(temp_points);
-
-    cluster_centers = temp_points.slice(0, nb_clusters);
-
-    //console.log('cluster_centers', cluster_centers);
-
-
-    displayCenters(cluster_centers);
-    cluster_points = computerClouds(points, cluster_centers);
-    console.log("aaaaaaaaaaaa", cluster_points);
-    cluster_centers = updateCenters(cluster_points);
-    displayCenters(cluster_centers);
-
-    for (let i = 0; i<5; ++i){
-        cluster_points = computerClouds(points, cluster_centers);
-        cluster_centers = updateCenters(cluster_points);
-        displayCenters(cluster_centers);
-    }
-}
-
-
 function computerClouds(points, cluster_centers){
     let cluster_points = []; // stores all the points to its cluster_points
     for (let cluster_idx=0; cluster_idx < nb_clusters; ++cluster_idx){
@@ -192,16 +185,13 @@ function computerClouds(points, cluster_centers){
         cluster_points[nearest_cluster].push(p);
         // Il faut l'info sur les centres (quel point à quel centre au niveau des points pour la visu)
         p.center = nearest_cluster;
-        // console.log(p);
     }
-
     return cluster_points;
 }
 
 
 function updateCenters(cluster_points){
     let new_cluster_centers = [];
-
     for(let c_points of cluster_points){
         let sumX = 0;
         let sumY = 0;
@@ -212,5 +202,4 @@ function updateCenters(cluster_points){
         new_cluster_centers.push({x:sumX/c_points.length, y:sumY/c_points.length});
     }
     return new_cluster_centers;
-
 }
