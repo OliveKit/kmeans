@@ -3,10 +3,10 @@ const cluster_size = 5;
 const point_color = "black";
 const cluster_color = "red";
 
-const nb_clusters = 3;
+const nb_clusters = 4;
 const nb_points = 1000;
 
-const cluster_distribution = 300;
+const cluster_distribution = 400  ;
 
 const canvas_x = 750;
 const canvas_y = 550;
@@ -40,9 +40,11 @@ function iterateKmeans() {
     } else {
         cluster_centers = updateCenters(cluster_points);
     }
-    displayCenters(cluster_centers);
     cluster_points = computerClouds(points, cluster_centers);
-    displayPoints(cluster_points);
+    displayStrokes(cluster_points, cluster_centers);
+    displayPointsColors(cluster_points);
+    displayCenters(cluster_centers);
+
 }
 
 // set the dimensions and margins of the graph
@@ -124,14 +126,43 @@ function displayCenters(centers) {
 function init_figure(){
   svg.selectAll(".center-circle").remove();
   svg.selectAll(".click-circle").remove();
+  svg.selectAll(".line").remove();
+
   for (let p of points){
     drawCircle(p.x, p.y, point_size, point_color);
   }
 }
 
+function displayStroke(c, p, color='black'){
+  svg.append("line")
+      .attr('class', 'line')
+      .attr('x1', c.x)
+      .attr('y1', c.y)
+      .attr('x2', p.x)
+      .attr('y2', p.y)
+      .attr("stroke", color)
+      .attr('opacity', 0.2);
+}
+
+function displayStrokes(cluster_points, cluster_centers){
+  svg.selectAll(".line").remove();
+  for (let i =0; i < nb_clusters; ++i){
+    let c = cluster_centers[i];
+    let color = colors[i];
+    for (let p of cluster_points[i]){
+      displayStroke(c, p, color);
+    }
+  }
+}
+
+
+
 init_figure();
 
-function displayPoints(cpoints) {
+
+
+
+function displayPointsColors(cpoints) {
     // les points ne sont pas dans le bon ordre, pas bonne coloration
     // let data = [];
     // for (let i = 0, len = cpoints.length ; i < len ; i++) {
@@ -157,7 +188,7 @@ function displayPoints(cpoints) {
         .data(points)
         // .enter()
         .transition()
-        .duration(250)
+        .duration(400)
         // .append("circle")  // Add circle svg
         .attr("fill", function(d) {
             return colors[d.center];  // Circle's X
