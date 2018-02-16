@@ -3,10 +3,10 @@ const cluster_size = 5;
 const point_color = "black";
 const cluster_color = "red";
 
-const nb_clusters = 4;
-const nb_points = 10000;
+const nb_clusters = 3;
+const nb_points = 1000;
 
-const cluster_distribution = 400;
+const cluster_distribution = 300;
 
 const canvas_x = 750;
 const canvas_y = 550;
@@ -114,9 +114,6 @@ function init_figure(){
 }
 
 init_figure();
-
-let buttonLaunchClustering = document.getElementById("launchClustering");
-buttonLaunchClustering.addEventListener('click', init_kmeans);
 
 function displayPoints(cpoints) {
     // les points ne sont pas dans le bon ordre, pas bonne coloration
