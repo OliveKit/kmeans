@@ -11,6 +11,31 @@ const cluster_distribution = 400;
 const canvas_x = 750;
 const canvas_y = 550;
 
+const colors = ["green", "blue", "yellow", "orange"];
+
+let cluster_points = [];
+let cluster_centers = [];
+
+document.addEventListener("keydown", function(event) {
+    // Space keydown
+    if(event.keyCode === 32) {
+        iterateKmeans();
+    }
+});
+
+function iterateKmeans() {
+    if (cluster_centers.length === 0) {
+        let temp_points = points.slice();
+        temp_points = d3.shuffle(temp_points);
+
+        cluster_centers = temp_points.slice(0, nb_clusters);
+    } else {
+        cluster_centers = updateCenters(cluster_points);
+    }
+    displayCenters(cluster_centers);
+    cluster_points = computerClouds(points, cluster_centers);
+    displayPoints(cluster_points);
+}
 
 // set the dimensions and margins of the graph
 let margin = {top: 20, right: 20, bottom: 30, left: 50},
@@ -63,7 +88,10 @@ function drawCircle(x, y, size, color=point_color) {
         .attr("cx", x)
         .attr("cy", y)
         .attr("r", size)
-        .attr("fill", color);
+        .attr("fill", color)
+        .attr("fill-opacity", 0.5)
+        .style("stroke", "black")
+        .style("stroke-width", "2px");
 }
 
 function displayCenters(centers) {
@@ -90,8 +118,40 @@ init_figure();
 let buttonLaunchClustering = document.getElementById("launchClustering");
 buttonLaunchClustering.addEventListener('click', init_kmeans);
 
+function displayPoints(cpoints) {
+    // les points ne sont pas dans le bon ordre, pas bonne coloration
+    // let data = [];
+    // for (let i = 0, len = cpoints.length ; i < len ; i++) {
+    //     let cloud = cpoints[i];
+    //     for (let j = 0, lenj = cloud.length ; j < lenj ; j++) {
+    //         let point = cloud[j];
+    //         point.center = i;
+    //         data.push(point);
+    //     }
+    // }
+    // console.log(data);
+    // svg.selectAll(".click-circle")
+    //     .data(data)
+    //     // .enter()
+    //     .transition()
+    //     .duration(250)
+    //     // .append("circle")  // Add circle svg
+    //     .attr("fill", function(d) {
+    //         return colors[d.center];  // Circle's X
+    //     })
 
-let cluster_centers = [];
+    svg.selectAll(".click-circle")
+        .data(points)
+        // .enter()
+        .transition()
+        .duration(250)
+        // .append("circle")  // Add circle svg
+        .attr("fill", function(d) {
+            return colors[d.center];  // Circle's X
+        })
+}
+
+// let cluster_centers = [];
 
 function init_kmeans(){
     let temp_points = points.slice();
@@ -104,13 +164,14 @@ function init_kmeans(){
 
     displayCenters(cluster_centers);
     cluster_points = computerClouds(points, cluster_centers);
+    console.log("aaaaaaaaaaaa", cluster_points);
     cluster_centers = updateCenters(cluster_points);
     displayCenters(cluster_centers);
 
     for (let i = 0; i<5; ++i){
-      cluster_points = computerClouds(points, cluster_centers);
-      cluster_centers = updateCenters(cluster_points);
-      displayCenters(cluster_centers); ///SI ICI
+        cluster_points = computerClouds(points, cluster_centers);
+        cluster_centers = updateCenters(cluster_points);
+        displayCenters(cluster_centers);
     }
 }
 
@@ -118,8 +179,8 @@ function init_kmeans(){
 function computerClouds(points, cluster_centers){
     let cluster_points = []; // stores all the points to its cluster_points
     for (let cluster_idx=0; cluster_idx < nb_clusters; ++cluster_idx){
-      let c_points = [];
-      cluster_points.push(c_points);
+        let c_points = [];
+        cluster_points.push(c_points);
     }
 
     for (let p of points) {
@@ -132,6 +193,9 @@ function computerClouds(points, cluster_centers){
 
         let nearest_cluster = dist.indexOf(Math.min(...dist)); //min dist
         cluster_points[nearest_cluster].push(p);
+        // Il faut l'info sur les centres (quel point à quel centre au niveau des points pour la visu)
+        p.center = nearest_cluster;
+        // console.log(p);
     }
 
     return cluster_points;
@@ -139,17 +203,17 @@ function computerClouds(points, cluster_centers){
 
 
 function updateCenters(cluster_points){
-  let new_cluster_centers = [];
+    let new_cluster_centers = [];
 
-  for(let c_points of cluster_points){
-    let sumX = 0;
-    let sumY = 0;
-    for(let p of c_points){
-      sumX += p.x;
-      sumY += p.y;
+    for(let c_points of cluster_points){
+        let sumX = 0;
+        let sumY = 0;
+        for(let p of c_points){
+            sumX += p.x;
+            sumY += p.y;
+        }
+        new_cluster_centers.push({x:sumX/c_points.length, y:sumY/c_points.length});
     }
-    new_cluster_centers.push({x:sumX/c_points.length, y:sumY/c_points.length});
-  }
-  return new_cluster_centers;
+    return new_cluster_centers;
 
 }
