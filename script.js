@@ -1,16 +1,52 @@
-const point_size = 10;
+const point_size = 3;
 const cluster_size = 5;
 const point_color = "black";
 const cluster_color = "red";
-let nb_clusters = 2;
+
+const nb_clusters = 4;
+const nb_points = 10000;
+
+const cluster_distribution = 400;
+
+const canvas_x = 750;
+const canvas_y = 550;
 
 
 // set the dimensions and margins of the graph
 let margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 600 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    width = canvas_x - margin.left - margin.right,
+    height = canvas_y - margin.top - margin.bottom;
 
-let points = [];
+let points = createCloud();
+
+function gaussianRand(theta=4) {
+  let rand = 0;
+  for (let i = 0; i < theta; i += 1) {
+    rand += Math.random();
+  }
+  return rand / theta;
+}
+
+
+function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distribution){
+  let new_points = [];
+  c0 = {x:150, y:150};
+  c1 = {x:350, y:150};
+  clusters = [];
+  for (let c =0; c < nb_c; ++c){
+    clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
+  }
+
+  for (let p = 0; p < nb_p/nb_c; ++p ){
+    for (let c of clusters){
+      new_points.push({x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)})
+    }
+  }
+  return new_points;
+}
+
+
+
 
 let svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -19,6 +55,7 @@ let svg = d3.select("body").append("svg")
         points.push({x: d3.mouse(this)[0], y: d3.mouse(this)[1]});
         drawCircle(d3.mouse(this)[0], d3.mouse(this)[1], point_size);
     });
+
 
 function drawCircle(x, y, size, color=point_color) {
     svg.append("circle")
@@ -42,6 +79,14 @@ function displayCenters(centers) {
     }
 }
 
+function init_figure(){
+  for (let p of points){
+    drawCircle(p.x, p.y, point_size, point_color);
+  }
+}
+
+init_figure();
+
 let buttonLaunchClustering = document.getElementById("launchClustering");
 buttonLaunchClustering.addEventListener('click', init_kmeans);
 
@@ -54,30 +99,23 @@ function init_kmeans(){
 
     cluster_centers = temp_points.slice(0, nb_clusters);
 
-    console.log('cluster_centers', cluster_centers);
+    //console.log('cluster_centers', cluster_centers);
 
 
     displayCenters(cluster_centers);
     cluster_points = computerClouds(points, cluster_centers);
     cluster_centers = updateCenters(cluster_points);
-
-    console.log('cluster_centers', cluster_centers);
+    displayCenters(cluster_centers);
 
     for (let i = 0; i<5; ++i){
       cluster_points = computerClouds(points, cluster_centers);
       cluster_centers = updateCenters(cluster_points);
-      displayCenters(cluster_centers);
-      console.log('cluster_centers', cluster_centers);
+      displayCenters(cluster_centers); ///SI ICI
     }
-
 }
 
 
-// Coucou ma belle
-// ----c=8 # Quentin
-// ----c=======================================8 # Clément (sacré engin)
 function computerClouds(points, cluster_centers){
-
     let cluster_points = []; // stores all the points to its cluster_points
     for (let cluster_idx=0; cluster_idx < nb_clusters; ++cluster_idx){
       let c_points = [];
@@ -86,18 +124,13 @@ function computerClouds(points, cluster_centers){
 
     for (let p of points) {
         let dist = [];
-        for (let i = 0, len = cluster_centers.length ; i < len ; i++) {
-            let c = cluster_centers[i];
-            dist[i] = Math.hypot(p.x - c.x, p.y - c.y);
+        for (let c of cluster_centers) {
+            let distance =Math.hypot(p.x - c.x, p.y - c.y);
+            if (isNaN(distance)){distance = 0};
+            dist.push(distance);
         }
-        if (isNaN(dist[0])){dist[0] = 0};
-        if (isNaN(dist[1])){dist[1] = 0};
 
         let nearest_cluster = dist.indexOf(Math.min(...dist)); //min dist
-
-        console.log('nearest_cluster', nearest_cluster);
-        if(nearest_cluster<0){console.log('dist', dist)};
-        //console.log('cluster_points', cluster_points);
         cluster_points[nearest_cluster].push(p);
     }
 
@@ -109,16 +142,14 @@ function updateCenters(cluster_points){
   let new_cluster_centers = [];
 
   for(let c_points of cluster_points){
-    console.log('length point', c_points.length);
     let sumX = 0;
     let sumY = 0;
     for(let p of c_points){
       sumX += p.x;
       sumY += p.y;
     }
-    new_cluster_centers.push([sumX/c_points.length, sumY/c_points.length]);
+    new_cluster_centers.push({x:sumX/c_points.length, y:sumY/c_points.length});
   }
-
   return new_cluster_centers;
 
 }
