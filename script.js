@@ -13,6 +13,8 @@ const canvas_y = 550;
 
 const colors = ["green", "blue", "yellow", "orange"];
 
+const animationTime = 1000;
+
 let cluster_points = [];
 let cluster_centers = [];
 
@@ -22,28 +24,37 @@ document.addEventListener("keydown", function(event) {
         iterateKmeans();
     }
     if(event.keyCode === 82) {
-      cluster_centers = [];
-      init_figure();
+        cluster_centers = [];
+        init_figure();
     }
 });
 
 function init_centers(){
-  let temp_points = points.slice();
-  temp_points = d3.shuffle(temp_points);
+    let temp_points = points.slice();
+    temp_points = d3.shuffle(temp_points);
 
-  return temp_points.slice(0, nb_clusters);
-};
+    return temp_points.slice(0, nb_clusters);
+}
 
 function iterateKmeans() {
     if (cluster_centers.length === 0) {
         cluster_centers = init_centers();
+        cluster_points = computerClouds(points, cluster_centers);
+        displayInitialLines(points, cluster_centers);
+        displayInitialCenters(cluster_centers);
     } else {
         cluster_centers = updateCenters(cluster_points);
+        cluster_points = computerClouds(points, cluster_centers);
+        displayUpdatedLines(points, cluster_centers);
+        displayUpdatedCenters(cluster_centers);
+
     }
-    cluster_points = computerClouds(points, cluster_centers);
-    displayStrokes(cluster_points, cluster_centers);
-    displayPointsColors(cluster_points);
-    displayCenters(cluster_centers);
+    // TODO : il vaut mieux stocker les infos dans points pour l'affichage
+    // TODO : x, y et index centre à chaque pas
+    // TODO : pour pouvoir faire les animations facilement
+    // TODO : voir car du coup on a les infos en double : dans cluster_points pour le calcul et dans points pour l'affichage
+    // displayStrokes(cluster_points, cluster_centers);
+    displayPointsColors(points);
 
 }
 
@@ -55,35 +66,35 @@ let margin = {top: 20, right: 20, bottom: 30, left: 50},
 let points = createCloud();
 
 function gaussianRand(theta=4) {
-  let rand = 0;
-  for (let i = 0; i < theta; i += 1) {
-    rand += Math.random();
-  }
-  return rand / theta;
+    let rand = 0;
+    for (let i = 0; i < theta; i += 1) {
+        rand += Math.random();
+    }
+    return rand / theta;
 }
 
 function isInsideCanvas(point){
-  if (point.x < 0 || point.x > canvas_x){return false;};
-  if (point.y < 0 || point.y > canvas_y){return false;};
-  return true;
+    if (point.x < 0 || point.x > canvas_x){return false;}
+    if (point.y < 0 || point.y > canvas_y){return false;}
+    return true;
 }
 
 function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distribution){
-  let new_points = [];
-  clusters = [];
-  for (let c =0; c < nb_c; ++c){
-    clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
-  }
-
-  for (let p = 0; p < nb_p/nb_c; ++p ){
-    for (let c of clusters){
-      let new_point = {x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)}
-      if(isInsideCanvas(new_point) == true){
-        new_points.push(new_point)
-      }
+    let new_points = [];
+    let clusters = [];
+    for (let c =0; c < nb_c; ++c){
+        clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
     }
-  }
-  return new_points;
+
+    for (let p = 0; p < nb_p/nb_c; ++p ){
+        for (let c of clusters){
+            let new_point = {x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)};
+            if(isInsideCanvas(new_point)){
+                new_points.push(new_point)
+            }
+        }
+    }
+    return new_points;
 }
 
 
@@ -110,49 +121,106 @@ function drawCircle(x, y, size, color=point_color) {
         .style("stroke-width", "1px");
 }
 
-function displayCenters(centers) {
-    svg.selectAll(".center-circle").remove();
+function displayInitialCenters(centers) {
 
-    for (let c of centers){
-        svg.append("circle")
-            .attr('class', 'center-circle')
-            .attr("cx", c.x)
-            .attr("cy", c.y)
-            .attr("r", cluster_size)
-            .attr("fill", cluster_color);
-    }
+    svg.selectAll(".center-circle")
+        .data(centers)
+        .enter()
+        .append("circle")
+        .attr("class", "center-circle")
+        .attr("cx", function(d) {
+            return d.x;
+        })
+        .attr("cy", function(d) {
+            return d.y;
+        })
+        .attr("r", cluster_size)
+        .attr("fill", cluster_color);
+}
+
+function displayUpdatedCenters(centers) {
+    svg.selectAll(".center-circle")
+        .data(centers)
+        .transition()
+        .duration(animationTime)
+        .attr("cx", function(d) {
+            return d.x;
+        })
+        .attr("cy", function(d) {
+            return d.y;
+        });
+}
+
+function displayInitialLines(points, centers) {
+    svg.selectAll("line")
+        .data(points)
+        .enter()
+        .append("line")
+        .attr("class", "line")
+        .attr("x1", function(d) {
+            return d.x;
+        })
+        .attr("y1", function(d) {
+            return d.y;
+        })
+        .attr("x2", function(d) {
+            return centers[d.center].x;
+        })
+        .attr("y2", function(d) {
+            return centers[d.center].y;
+        })
+        .attr("stroke", function(d) {
+            return colors[d.center];
+        })
+        .attr('opacity', 0.2);
+}
+
+function displayUpdatedLines(points, centers) {
+    svg.selectAll("line")
+        .data(points)
+        .transition()
+        .duration(animationTime)
+        .attr("x2", function(d) {
+            return centers[d.center].x;
+        })
+        .attr("y2", function(d) {
+            return centers[d.center].y;
+        })
+        .attr("stroke", function(d) {
+            return colors[d.center];
+        });
 }
 
 function init_figure(){
-  svg.selectAll(".center-circle").remove();
-  svg.selectAll(".click-circle").remove();
-  svg.selectAll(".line").remove();
+    svg.selectAll(".center-circle").remove();
+    svg.selectAll(".click-circle").remove();
+    svg.selectAll(".line").remove();
 
-  for (let p of points){
-    drawCircle(p.x, p.y, point_size, point_color);
-  }
+    for (let p of points){
+        drawCircle(p.x, p.y, point_size, point_color);
+    }
 }
 
 function displayStroke(c, p, color='black'){
-  svg.append("line")
-      .attr('class', 'line')
-      .attr('x1', c.x)
-      .attr('y1', c.y)
-      .attr('x2', p.x)
-      .attr('y2', p.y)
-      .attr("stroke", color)
-      .attr('opacity', 0.2);
+    svg.append("line")
+        .attr('class', 'line')
+        .attr('x1', c.x)
+        .attr('y1', c.y)
+        .attr('x2', p.x)
+        .attr('y2', p.y)
+        .attr("stroke", color)
+        .attr('opacity', 0.2);
 }
 
 function displayStrokes(cluster_points, cluster_centers){
-  svg.selectAll(".line").remove();
-  for (let i =0; i < nb_clusters; ++i){
-    let c = cluster_centers[i];
-    let color = colors[i];
-    for (let p of cluster_points[i]){
-      displayStroke(c, p, color);
+    svg.selectAll(".line").remove();
+    for (let i =0; i < nb_clusters; ++i){
+        let c = cluster_centers[i];
+        let color = colors[i];
+        for (let p of cluster_points[i]){
+            displayStroke(c, p, color);
+        }
     }
-  }
 }
 
 
@@ -162,40 +230,17 @@ init_figure();
 
 
 
-function displayPointsColors(cpoints) {
-    // les points ne sont pas dans le bon ordre, pas bonne coloration
-    // let data = [];
-    // for (let i = 0, len = cpoints.length ; i < len ; i++) {
-    //     let cloud = cpoints[i];
-    //     for (let j = 0, lenj = cloud.length ; j < lenj ; j++) {
-    //         let point = cloud[j];
-    //         point.center = i;
-    //         data.push(point);
-    //     }
-    // }
-    // console.log(data);
-    // svg.selectAll(".click-circle")
-    //     .data(data)
-    //     // .enter()
-    //     .transition()
-    //     .duration(250)
-    //     // .append("circle")  // Add circle svg
-    //     .attr("fill", function(d) {
-    //         return colors[d.center];  // Circle's X
-    //     })
+function displayPointsColors(points) {
+
 
     svg.selectAll(".click-circle")
         .data(points)
-        // .enter()
         .transition()
-        .duration(400)
-        // .append("circle")  // Add circle svg
+        .duration(animationTime)
         .attr("fill", function(d) {
-            return colors[d.center];  // Circle's X
+            return colors[d.center];
         })
 }
-
-// let cluster_centers = [];
 
 function computerClouds(points, cluster_centers){
     let cluster_points = []; // stores all the points to its cluster_points
@@ -208,7 +253,7 @@ function computerClouds(points, cluster_centers){
         let dist = [];
         for (let c of cluster_centers) {
             let distance =Math.hypot(p.x - c.x, p.y - c.y);
-            if (isNaN(distance)){distance = 0};
+            if (isNaN(distance)){distance = 0}
             dist.push(distance);
         }
 
