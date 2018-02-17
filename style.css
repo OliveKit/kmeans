@@ -1,3 +1,25 @@
 svg {
     border:1px solid black;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15), 0 6px 20px 0 rgba(0, 0, 0, 0.15);
+}
+
+.menu
+{
+  width: 730px;
+  background-color: #f6a2b3;
+  padding-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.menu-division
+{
+  text-align: left;
+  background-color: #DC143C;
+  padding-left: 10px;
+  padding-top: 10px;
+  border-radius: 5px;
 }

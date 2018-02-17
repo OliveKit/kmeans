@@ -1,40 +1,34 @@
-const point_size = 3;
+const point_size = 5;
 const cluster_size = 5;
 const point_color = "black";
 const cluster_color = "red";
 
-const nb_clusters = 4;
+const nb_clusters = 5;
 const nb_points = 1000;
 
-const cluster_distribution = 400  ;
+const cluster_distribution = 2  ;
 
 const canvas_x = 750;
 const canvas_y = 550;
 
-const colors = ["green", "blue", "yellow", "orange"];
 
-const animationTime = 1000;
+const animationTime = 500;
 
-let cluster_points = [];
-let cluster_centers = [];
-
-document.addEventListener("keydown", function(event) {
-    // Space keydown
-    if(event.keyCode === 32) {
-        iterateKmeans();
-    }
-    if(event.keyCode === 82) {
-        cluster_centers = [];
-        init_figure();
-    }
-});
 
 function init_centers(){
     let temp_points = points.slice();
     temp_points = d3.shuffle(temp_points);
-
     return temp_points.slice(0, nb_clusters);
+
+/* Random initialize:
+  let clusters = [];
+  for (let c = 0; c < nb_clusters; ++c){
+    clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
+  }
+  return clusters;
+  */
 }
+
 
 function iterateKmeans() {
     if (cluster_centers.length === 0) {
@@ -58,12 +52,6 @@ function iterateKmeans() {
 
 }
 
-// set the dimensions and margins of the graph
-let margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = canvas_x - margin.left - margin.right,
-    height = canvas_y - margin.top - margin.bottom;
-
-let points = createCloud();
 
 function gaussianRand(theta=4) {
     let rand = 0;
@@ -79,7 +67,7 @@ function isInsideCanvas(point){
     return true;
 }
 
-function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distribution){
+function createCloud(nb_c=nb_clusters, nb_p=nb_points, c_dis=cluster_distribution){
     let new_points = [];
     let clusters = [];
     for (let c =0; c < nb_c; ++c){
@@ -88,7 +76,7 @@ function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distributio
 
     for (let p = 0; p < nb_p/nb_c; ++p ){
         for (let c of clusters){
-            let new_point = {x: c.x + c_dis*(gaussianRand()-0.5), y: c.y + c_dis*(gaussianRand()-0.5)};
+            let new_point = {x: c.x + c_dis*100*(gaussianRand()-0.5), y: c.y + c_dis*100*(gaussianRand()-0.5)};
             if(isInsideCanvas(new_point)){
                 new_points.push(new_point)
             }
@@ -98,17 +86,6 @@ function createCloud(nb_p=nb_points, nb_c=nb_clusters, c_dis=cluster_distributio
 }
 
 
-
-
-let svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .on("click", function(){
-        points.push({x: d3.mouse(this)[0], y: d3.mouse(this)[1]});
-        drawCircle(d3.mouse(this)[0], d3.mouse(this)[1], point_size);
-    });
-
-
 function drawCircle(x, y, size, color=point_color) {
     svg.append("circle")
         .attr('class', 'click-circle')
@@ -116,9 +93,9 @@ function drawCircle(x, y, size, color=point_color) {
         .attr("cy", y)
         .attr("r", size)
         .attr("fill", color)
-        .attr("fill-opacity", 0.5)
-        .style("stroke", "black")
-        .style("stroke-width", "1px");
+        .attr("fill-opacity", 0.6);
+  //      .style("stroke", point_color)
+  //      .style("stroke-width", "1px");
 }
 
 function displayInitialCenters(centers) {
@@ -172,7 +149,7 @@ function displayInitialLines(points, centers) {
         .attr("stroke", function(d) {
             return colors[d.center];
         })
-        .attr('opacity', 0.2);
+        .attr('opacity', 0.3);
 }
 
 function displayUpdatedLines(points, centers) {
@@ -191,7 +168,7 @@ function displayUpdatedLines(points, centers) {
         });
 }
 
-function init_figure(){
+function draw_points(){
     svg.selectAll(".center-circle").remove();
     svg.selectAll(".click-circle").remove();
     svg.selectAll(".line").remove();
@@ -201,7 +178,7 @@ function init_figure(){
     }
 }
 
-function displayStroke(c, p, color='black'){
+function displayStroke(c, p, color=point_color){
     svg.append("line")
         .attr('class', 'line')
         .attr('x1', c.x)
@@ -225,14 +202,7 @@ function displayStrokes(cluster_points, cluster_centers){
 
 
 
-init_figure();
-
-
-
-
 function displayPointsColors(points) {
-
-
     svg.selectAll(".click-circle")
         .data(points)
         .transition()
@@ -265,7 +235,6 @@ function computerClouds(points, cluster_centers){
     return cluster_points;
 }
 
-
 function updateCenters(cluster_points){
     let new_cluster_centers = [];
     for(let c_points of cluster_points){
@@ -279,3 +248,64 @@ function updateCenters(cluster_points){
     }
     return new_cluster_centers;
 }
+
+
+//Main
+
+// set the dimensions and margins of the graph
+let margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = canvas_x - margin.left - margin.right,
+    height = canvas_y - margin.top - margin.bottom;
+
+let svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .on("click", function(){
+        points.push({x: d3.mouse(this)[0], y: d3.mouse(this)[1]});
+        drawCircle(d3.mouse(this)[0], d3.mouse(this)[1], point_size);
+    });
+
+
+let points = createCloud();
+draw_points();
+
+
+
+// Generate color map and colors
+let cm = d3.scaleLinear().domain([0,nb_clusters])
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb('#00bfff'), d3.rgb('#DC143C')]);
+colors = [];
+for (let c=0; c< nb_clusters; ++c ){
+  colors.push(cm(c));
+}
+
+let cluster_points = [];
+let cluster_centers = [];
+
+document.addEventListener("keydown", function(event) {
+    // Space keydown
+    if(event.keyCode === 32) {
+        iterateKmeans();
+    }
+    if(event.keyCode === 82) {
+        cluster_centers = [];
+        draw_points();
+    }
+});
+
+let b_generateData = document.getElementById("generateData");
+let s_nClusters = document.getElementById("s_nClusters");
+let s_nPoints = document.getElementById("s_nPoints");
+let s_noise = document.getElementById("s_noise");
+
+b_generateData.addEventListener('click', function(){
+  console.log("#Cluster", s_nClusters.value);
+  console.log("#Points", s_nPoints.value);
+  console.log("Noise", s_noise.value);
+
+  points = createCloud(nb_c=s_nClusters.value,
+    nb_p=s_nPoints.value, c_dis=s_noise.value);
+  cluster_centers = [];
+  draw_points();
+});
