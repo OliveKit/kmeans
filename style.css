@@ -6,7 +6,10 @@ svg {
 
 .menu
 {
-  width: 730px;
+  position: absolute;
+  right: 20px;
+  margin: auto;
+  width: 400px;
   background-color: #f6a2b3;
   padding-top: 10px;
   padding: 10px;
@@ -17,9 +20,11 @@ svg {
 
 .menu-division
 {
+  margin:auto;
+  padding-top: 10px;
   text-align: left;
   background-color: #DC143C;
   padding-left: 10px;
   padding-top: 10px;
-  border-radius: 5px;
+  border-radius: 10px;
 }

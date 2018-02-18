@@ -5,8 +5,7 @@ const cluster_color = "red";
 
 const nb_clusters = 5;
 const nb_points = 1000;
-
-const cluster_distribution = 2  ;
+const data_noise = 2  ;
 
 const canvas_x = 750;
 const canvas_y = 550;
@@ -19,14 +18,6 @@ function init_centers(){
     let temp_points = points.slice();
     temp_points = d3.shuffle(temp_points);
     return temp_points.slice(0, nb_clusters);
-
-/* Random initialize:
-  let clusters = [];
-  for (let c = 0; c < nb_clusters; ++c){
-    clusters.push({x: Math.random()*canvas_x, y: Math.random()*canvas_y});
-  }
-  return clusters;
-  */
 }
 
 
@@ -52,7 +43,6 @@ function iterateKmeans() {
 
 }
 
-
 function gaussianRand(theta=4) {
     let rand = 0;
     for (let i = 0; i < theta; i += 1) {
@@ -67,7 +57,7 @@ function isInsideCanvas(point){
     return true;
 }
 
-function createCloud(nb_c=nb_clusters, nb_p=nb_points, c_dis=cluster_distribution){
+function createCloud(nb_c=nb_clusters, nb_p=nb_points, c_dis=data_noise){
     let new_points = [];
     let clusters = [];
     for (let c =0; c < nb_c; ++c){
@@ -84,7 +74,6 @@ function createCloud(nb_c=nb_clusters, nb_p=nb_points, c_dis=cluster_distributio
     }
     return new_points;
 }
-
 
 function drawCircle(x, y, size, color=point_color) {
     svg.append("circle")
@@ -200,8 +189,6 @@ function displayStrokes(cluster_points, cluster_centers){
     }
 }
 
-
-
 function displayPointsColors(points) {
     svg.selectAll(".click-circle")
         .data(points)
@@ -249,6 +236,48 @@ function updateCenters(cluster_points){
     return new_cluster_centers;
 }
 
+/** --< Menu >--*/
+let div_nClusters = document.getElementById('i_cluster');
+let l_nClusters = document.createElement('label');
+l_nClusters.id='l_nClusters';
+div_nClusters.appendChild(l_nClusters);
+
+let div_points = document.getElementById('i_points');
+let l_points = document.createElement('label');
+l_points.id='l_nPoints';
+div_points.appendChild(l_points);
+
+let div_noise = document.getElementById('i_noise');
+let l_noise = document.createElement('label');
+l_noise.id='l_noise';
+div_noise.appendChild(l_noise);
+
+
+let b_generateData = document.getElementById("generateData");
+let s_nClusters = document.getElementById("s_nClusters");
+let s_nPoints = document.getElementById("s_nPoints");
+let s_noise = document.getElementById("s_noise");
+
+s_nClusters.addEventListener('change', function(){
+  document.getElementById('l_nClusters').innerHTML = s_nClusters.value;
+})
+
+s_nPoints.addEventListener('change', function(){
+  document.getElementById('l_nPoints').innerHTML = s_nPoints.value;
+})
+
+s_noise.addEventListener('change', function(){
+  document.getElementById('l_noise').innerHTML = s_noise.value;
+})
+
+b_generateData.addEventListener('click', function(){
+  points = createCloud(nb_c=s_nClusters.value,
+    nb_p=s_nPoints.value, c_dis=s_noise.value);
+  cluster_centers = [];
+  draw_points();
+});
+/** --< Menu >--*/
+
 
 //Main
 
@@ -292,20 +321,4 @@ document.addEventListener("keydown", function(event) {
         cluster_centers = [];
         draw_points();
     }
-});
-
-let b_generateData = document.getElementById("generateData");
-let s_nClusters = document.getElementById("s_nClusters");
-let s_nPoints = document.getElementById("s_nPoints");
-let s_noise = document.getElementById("s_noise");
-
-b_generateData.addEventListener('click', function(){
-  console.log("#Cluster", s_nClusters.value);
-  console.log("#Points", s_nPoints.value);
-  console.log("Noise", s_noise.value);
-
-  points = createCloud(nb_c=s_nClusters.value,
-    nb_p=s_nPoints.value, c_dis=s_noise.value);
-  cluster_centers = [];
-  draw_points();
 });
